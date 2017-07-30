@@ -19,6 +19,7 @@
 *.so.dbg
 *.mod.c
 *.i
+*.pyc
 *.lst
 *.symtypes
 *.order
@@ -97,3 +98,5 @@ x509.genkey
 
 # Kconfig presets
 all.config
+
+cfp_log.txt
