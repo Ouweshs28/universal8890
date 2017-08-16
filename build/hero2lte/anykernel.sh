@@ -49,6 +49,20 @@ if egrep -q "dream|G95" "/system/build.prop"; then
   replace_file service_contexts 644 dream/service_contexts;
 fi;
 
+if egrep -q "grace|N93" "/system/build.prop"; then
+  ui_print " ";
+  ui_print "Patching ramdisk for Note FE ported ROMs...";
+  insert_line default.prop "ro.oem_unlock_supported=1" after "persist.security.ams.enforcing=1" "ro.oem_unlock_supported=1";
+  replace_file init.environ.rc 750 grace/init.environ.rc;
+  insert_line init.samsungexynos8890.rc "service visiond /system/bin/visiond" after "start secure_storage" "\n# AIR\nservice visiond /system/bin/visiond\n    class main\n    user system\n    group system camera media media_rw\n";
+  replace_file property_contexts 644 grace/property_contexts;
+  replace_file seapp_contexts 644 grace/seapp_contexts;
+  replace_file sepolicy 644 grace/sepolicy;
+  replace_file sepolicy_version 644 grace/sepolicy_version;
+  replace_file service_contexts 644 grace/service_contexts;
+  insert_line ueventd.samsungexynos8890.rc "/dev/vertex0             0660   media      media" after "/dev/block/platform/155a0000.ufs/by-name/STEADY    0660    system    system" "\n# Vision (VPU, SCORE)\n/dev/vertex0             0660   media      media\n/dev/vertex1             0660   media      media\n/dev/iva_ctl             0660   media      media";
+fi;
+
 # fstab.samsungexynos8890
 patch_fstab fstab.samsungexynos8890 /system ext4 flags "wait,verify" "wait"
 patch_fstab fstab.samsungexynos8890 /data ext4 flags "wait,check,forceencrypt=footer" "wait,check,encryptable=footer"
