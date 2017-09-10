@@ -124,6 +124,19 @@ fi;
 
 debugging;
 
+ui_print " ";
+ui_print "Installing binaries for advanced controls...";
+mount -o rw,remount -t auto /system;
+cp -f /tmp/anykernel/system/xbin/sqlite3 $root/system/xbin/;
+cp -f /tmp/anykernel/system/xbin/zip $root/system/xbin/;
+cp -f /tmp/anykernel/system/xbin/busybox $root/system/xbin/;
+chmod 0755 $root/system/xbin/sqlite3;
+chmod 0755 $root/system/xbin/zip;
+chmod 0755 $root/system/xbin/busybox;
+ln -s $root/system/xbin/busybox $root/system/bin/busybox;
+$root/system/xbin/busybox --install -s $root/system/xbin;
+mount -o ro,remount -t auto /system;
+
 if [ "$(file_getprop /tmp/anykernel/anykernel.sh do.cleanup)" == 1 ]; then
   cleanup;
 fi;
