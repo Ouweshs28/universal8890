@@ -28,6 +28,7 @@ is_slot_device=0;
 
 ## AnyKernel file attributes
 # set permissions/ownership for included ramdisk files
+chmod 750 $ramdisk/init.primal.rc
 chmod 750 $ramdisk/init.services.rc
 chmod 750 $ramdisk/sbin/sysinit.sh
 
@@ -86,6 +87,7 @@ insert_line default.prop "wlan.wfd.hdcp=disable" after "ro.config.tima=0" "wlan.
 
 # init.samsungexynos8890.rc
 insert_line init.samsungexynos8890.rc "import init.services.rc" after "import init.remove_recovery.rc" "import init.services.rc";
+insert_line init.samsungexynos8890.rc "import init.primal.rc" after "import init.services.rc" "import init.primal.rc";
 
 # end ramdisk changes
 
