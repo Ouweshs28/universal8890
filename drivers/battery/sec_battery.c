@@ -1885,6 +1885,10 @@ static void sec_bat_chg_temperature_check(
 		return;
 
 #if defined(CONFIG_MUIC_HV)
+#if defined(CONFIG_MUIC_HV_SUPPORT_POGO_DOCK)
+	if (battery->muic_cable_type == ATTACHED_DEV_POGO_DOCK_9V_MUIC)
+		goto skip_voltage_change;
+#endif
 	if (battery->siop_level >= 100 && is_vbus_changed &&
 		battery->cable_type == POWER_SUPPLY_TYPE_HV_MAINS_CHG_LIMIT) {
 		is_vbus_changed = false;
@@ -1926,6 +1930,9 @@ static void sec_bat_chg_temperature_check(
 			is_vbus_changed = false;
 		}
 	}
+#if defined(CONFIG_MUIC_HV_SUPPORT_POGO_DOCK)
+skip_voltage_change:
+#endif
 #endif
 
 	if ((battery->siop_level >= 100) &&
@@ -3705,7 +3712,7 @@ static void sec_bat_monitor_work(
 
 continue_monitor:
 	dev_info(battery->dev,
-		 "%s: Status(%s), mode(%s), Health(%s), Cable(%d), level(%d%%)"
+		 "%s: Status(%s), mode(%s), Health(%s), Cable(%d), level(%d%%), slate_mode(%d)"
 #if defined(CONFIG_AFC_CHARGER_MODE)
 		", HV(%s), sleep_mode(%d)"
 #endif
@@ -3716,7 +3723,7 @@ continue_monitor:
 		 sec_bat_status_str[battery->status],
 		 sec_bat_charging_mode_str[battery->charging_mode],
 		 sec_bat_health_str[battery->health],
-		 battery->cable_type, battery->siop_level
+		 battery->cable_type, battery->siop_level, battery->slate_mode
 #if defined(CONFIG_AFC_CHARGER_MODE)
 		, battery->hv_chg_name, sleep_mode
 #endif
@@ -3938,6 +3945,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 	} else if (battery->slate_mode == true) {
 		sec_bat_set_charging_status(battery,
 				POWER_SUPPLY_STATUS_DISCHARGING);
+		battery->health = POWER_SUPPLY_HEALTH_GOOD;
 		battery->cable_type = POWER_SUPPLY_TYPE_BATTERY;
 
 		val.intval = 0;
@@ -3949,6 +3957,10 @@ static void sec_bat_cable_work(struct work_struct *work)
 
 		if (sec_bat_set_charge(battery, SEC_BAT_CHG_MODE_BUCK_OFF))
 			goto end_of_cable_work;
+#if defined(CONFIG_MUIC_HV)			
+		if (battery->wire_status == POWER_SUPPLY_TYPE_HV_MAINS_CHG_LIMIT)
+				muic_afc_set_voltage(9);
+#endif
 	} else {
 #if defined(CONFIG_EN_OOPS)
 		val.intval = battery->cable_type;
@@ -3987,9 +3999,11 @@ static void sec_bat_cable_work(struct work_struct *work)
 			if (battery->status == POWER_SUPPLY_STATUS_FULL)
 				sec_bat_set_charging_status(battery,
 					POWER_SUPPLY_STATUS_FULL);
-			else if (!keep_charging_state)
+			else if (!keep_charging_state) {
 				sec_bat_set_charging_status(battery,
 					POWER_SUPPLY_STATUS_CHARGING);
+				battery->health = POWER_SUPPLY_HEALTH_GOOD;
+			}
 		}
 
 		if (battery->cable_type == POWER_SUPPLY_TYPE_MAINS ||
@@ -6465,11 +6479,17 @@ static int sec_bat_cable_check(struct sec_battery_info *battery,
 	case ATTACHED_DEV_UNOFFICIAL_ID_TA_MUIC:
 	case ATTACHED_DEV_UNOFFICIAL_ID_ANY_MUIC:
 	case ATTACHED_DEV_UNSUPPORTED_ID_VB_MUIC:
+#if defined(CONFIG_MUIC_HV_SUPPORT_POGO_DOCK)
+	case ATTACHED_DEV_POGO_DOCK_MUIC:
+#endif
 		current_cable_type = POWER_SUPPLY_TYPE_MAINS;
 		break;
 	case ATTACHED_DEV_AFC_CHARGER_5V_MUIC:
 	case ATTACHED_DEV_QC_CHARGER_5V_MUIC:
 	case ATTACHED_DEV_AFC_CHARGER_5V_DUPLI_MUIC:
+#if defined(CONFIG_MUIC_HV_SUPPORT_POGO_DOCK)
+	case ATTACHED_DEV_POGO_DOCK_5V_MUIC:
+#endif
 #ifdef CONFIG_SEC_FACTORY
 		current_cable_type = POWER_SUPPLY_TYPE_MAINS;
 #else
@@ -6494,6 +6514,9 @@ static int sec_bat_cable_check(struct sec_battery_info *battery,
 		break;
 	case ATTACHED_DEV_AFC_CHARGER_9V_MUIC:
 	case ATTACHED_DEV_QC_CHARGER_9V_MUIC:
+#if defined(CONFIG_MUIC_HV_SUPPORT_POGO_DOCK)
+	case ATTACHED_DEV_POGO_DOCK_9V_MUIC:
+#endif
 		current_cable_type = POWER_SUPPLY_TYPE_HV_MAINS;
 		break;
 #if defined(CONFIG_MUIC_HV_12V)

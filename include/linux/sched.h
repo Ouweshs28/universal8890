@@ -331,10 +331,6 @@ extern void show_regs(struct pt_regs *);
 
 extern void show_stack(struct task_struct *task, unsigned long *sp);
 
-#ifdef CONFIG_KFAULT_AUTO_SUMMARY
-extern void show_stack_auto_summary(struct task_struct *task, unsigned long *sp);
-#endif
-
 void io_schedule(void);
 long io_schedule_timeout(long timeout);
 
@@ -1128,6 +1124,7 @@ struct sched_avg {
 #endif
 #endif
 	u32 usage_avg_sum;
+	struct task_struct *task;
 };
 
 #ifdef CONFIG_SCHEDSTATS

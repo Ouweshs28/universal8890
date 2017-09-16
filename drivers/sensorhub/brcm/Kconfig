@@ -575,5 +575,17 @@ config SSP_MOTOR
 	help
 	  If you want to use royce project, it should be set.
 
+config SSP_REGISTER_RW
+	tristate "SensorHub support Register RW"
+	default n
+	help
+	  If you want to use Register RW sysfs, it should be set.
+
+config SSP_SUPPORT_MAGNETIC_OVERFLOW
+	tristate "SensorHub support Register RW"
+	default n
+	help
+	  If you want to use Register RW sysfs, it should be set.
+      
 source "drivers/sensorhub/brcm/max_notchfilter/Kconfig"
 source "drivers/sensorhub/brcm/bbdpl/Kconfig"

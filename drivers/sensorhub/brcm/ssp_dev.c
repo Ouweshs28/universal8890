@@ -163,11 +163,18 @@ static void initialize_variable(struct ssp_data *data)
 	data->uProxCanc = 0;
 	data->uProxHiThresh = data->uProxHiThresh_default;
 	data->uProxLoThresh = data->uProxLoThresh_default;
+#ifdef CONFIG_SENSORS_SSP_PROX_DUALIZATION
 	//for tmd4904
 	data->uProxHiThresh_tmd4904 = data->uProxHiThresh_default_tmd4904;
 	data->uProxLoThresh_tmd4904 = data->uProxLoThresh_default_tmd4904;
 #endif
-	data->uGyroDps = GYROSCOPE_DPS2000;
+#endif
+
+#ifdef CONFIG_SENSORS_SSP_GRACE
+	data->uGyroDps = GYROSCOPE_DPS1000;
+#else
+    data->uGyroDps = GYROSCOPE_DPS2000;
+#endif
 	data->uIr_Current = DEFUALT_IR_CURRENT;
 
 	data->mcu_device = NULL;
@@ -221,7 +228,8 @@ static void initialize_variable(struct ssp_data *data)
 
 	data->timestamp_factor = 10; // initialize for 0.1%
 	ssp_debug_time_flag = false;
-
+    data->dhrAccelScaleRange = 0;
+    
 	data->sensor_dump_cnt_light = 0;
 	data->sensor_dump_flag_light = false;
 	data->sensor_dump_flag_proximity = false;
@@ -287,7 +295,7 @@ int initialize_mcu(struct ssp_data *data)
 	pr_info("[SSP] MCU Firm Rev : New = %8u\n",
 		data->uCurFirmRev);
 
-
+    data->dhrAccelScaleRange = get_accel_range(data);
 
 /* hoi: il dan mak a */
 #ifndef CONFIG_SENSORS_SSP_BBD
@@ -464,37 +472,37 @@ static int ssp_parse_dt(struct device *dev, struct ssp_data *data)
 			&data->uProxHiThresh_default))
 		data->uProxHiThresh_default = DEFUALT_HIGH_THRESHOLD;
 
-	//for tmd4904
-	data->uProxHiThresh_default_tmd4904 = DEFUALT_HIGH_THRESHOLD_TMD4904;
 
 	if (of_property_read_u32(np, "ssp,prox-low_thresh",
 			&data->uProxLoThresh_default))
 		data->uProxLoThresh_default = DEFUALT_LOW_THRESHOLD;
 
-	//for tmd4904
-	data->uProxLoThresh_default_tmd4904 = DEFUALT_LOW_THRESHOLD_TMD4904;
-
-	pr_info("[SSP] hi-thresh[%u] low-thresh[%u], TMD4904 hi-thresh[%u] low-thresh[%u]\n",
-		data->uProxHiThresh_default, data->uProxLoThresh_default,
-		data->uProxHiThresh_default_tmd4904, data->uProxLoThresh_default_tmd4904);
+	pr_info("[SSP] hi-thresh[%u] low-thresh[%u]\n",
+		data->uProxHiThresh_default, data->uProxLoThresh_default);
 
 	if (of_property_read_u32(np, "ssp,prox-cal_hi_thresh",
 			&data->uProxHiThresh_cal))
 		data->uProxHiThresh_cal = DEFUALT_CAL_HIGH_THRESHOLD;
 
-	//for tmd4904
-	data->uProxHiThresh_cal_tmd4904 = DEFUALT_CAL_HIGH_THRESHOLD_TMD4904;
 
 	if (of_property_read_u32(np, "ssp,prox-cal_LOW_thresh",
 			&data->uProxLoThresh_cal))
 		data->uProxLoThresh_cal = DEFUALT_CAL_LOW_THRESHOLD;
 
+	pr_info("[SSP] cal-hi[%u] cal-low[%u]\n",
+		data->uProxHiThresh_cal, data->uProxLoThresh_cal);
+
+#ifdef CONFIG_SENSORS_SSP_PROX_DUALIZATION
 	//for tmd4904
+	data->uProxHiThresh_default_tmd4904 = DEFUALT_HIGH_THRESHOLD_TMD4904;
+	data->uProxLoThresh_default_tmd4904 = DEFUALT_LOW_THRESHOLD_TMD4904;
+	data->uProxHiThresh_cal_tmd4904 = DEFUALT_CAL_HIGH_THRESHOLD_TMD4904;
 	data->uProxLoThresh_cal_tmd4904 = DEFUALT_CAL_LOW_THRESHOLD_TMD4904;
 
-	pr_info("[SSP] cal-hi[%u] cal-low[%u], TMD4904 cal-hi[%u] cal-low[%u] \n",
-		data->uProxHiThresh_cal, data->uProxLoThresh_cal,
+	pr_info("[SSP] TMD4904 hi-thresh[%u] low-thresh[%u] cal-hi[%u] cal-low[%u]\n",
+		data->uProxHiThresh_default_tmd4904, data->uProxLoThresh_default_tmd4904,
 		data->uProxHiThresh_cal_tmd4904, data->uProxLoThresh_cal_tmd4904);
+#endif
 #endif
 
 	data->uProxAlertHiThresh = DEFUALT_PROX_ALERT_HIGH_THRESHOLD;

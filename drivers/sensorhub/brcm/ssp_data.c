@@ -25,6 +25,9 @@
 #define MSG2AP_INST_TIME_SYNC			0x06
 #define MSG2AP_INST_RESET			0x07
 #define MSG2AP_INST_GYRO_CAL			0x08
+#ifdef CONFIG_SENSORS_SSP_MAGNETIC_COMMON
+#define MSG2AP_INST_MAG_CAL             0x09
+#endif
 #define MSG2AP_INST_SENSOR_INIT_DONE	0x0a
 
 #ifdef CONFIG_SENSORS_SSP_HIFI_BATCHING // HIFI batch
@@ -176,8 +179,15 @@ static void get_uncalib_sensordata(char *pchRcvDataFrame, int *iDataIdx,
 static void get_geomagnetic_uncaldata(char *pchRcvDataFrame, int *iDataIdx,
 	struct sensor_value *sensorsdata)
 {
-	memcpy(sensorsdata, pchRcvDataFrame + *iDataIdx, 12);
-	*iDataIdx += 12;
+	memcpy(sensorsdata, pchRcvDataFrame + *iDataIdx, UNCAL_MAGNETIC_SIZE);
+	*iDataIdx += UNCAL_MAGNETIC_SIZE;
+}
+
+static void get_geomagnetic_caldata(char *pchRcvDataFrame, int *iDataIdx,
+	struct sensor_value *sensorsdata)
+{
+	memcpy(sensorsdata, pchRcvDataFrame + *iDataIdx, MAGNETIC_SIZE);
+	*iDataIdx += MAGNETIC_SIZE;
 }
 
 static void get_geomagnetic_rawdata(char *pchRcvDataFrame, int *iDataIdx,
@@ -185,13 +195,6 @@ static void get_geomagnetic_rawdata(char *pchRcvDataFrame, int *iDataIdx,
 {
 	memcpy(sensorsdata, pchRcvDataFrame + *iDataIdx, 6);
 	*iDataIdx += 6;
-}
-
-static void get_geomagnetic_caldata(char *pchRcvDataFrame, int *iDataIdx,
-	struct sensor_value *sensorsdata)
-{
-	memcpy(sensorsdata, pchRcvDataFrame + *iDataIdx, 7);
-	*iDataIdx += 7;
 }
 
 static void get_rot_sensordata(char *pchRcvDataFrame, int *iDataIdx,
@@ -372,7 +375,11 @@ bool ssp_check_buffer(struct ssp_data *data)
 			idx_data += 14;
 			break;
 		case GEOMAGNETIC_UNCALIB_SENSOR:
-			idx_data += 20;
+#ifdef CONFIG_SSP_SUPPORT_MAGNETIC_OVERFLOW
+            idx_data += 21;
+#else
+            idx_data += 20;
+#endif
 			break;
 		case PRESSURE_SENSOR:
 			idx_data += 14;
@@ -693,7 +700,7 @@ int parse_dataframe(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 			if ((sensor_type < 0) || (sensor_type >= SENSOR_MAX)) {
 				pr_err("[SSP]: %s - Mcu data frame1 error %d\n", __func__,
 						sensor_type);
-				return ERROR;
+				goto error_return;
 			}
 			memcpy(&length, pchRcvDataFrame + iDataIdx, 2);
 			iDataIdx += 2;
@@ -846,7 +853,7 @@ int parse_dataframe(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 			if ((sensorsdata.meta_data.sensor < 0) || (sensorsdata.meta_data.sensor >= SENSOR_MAX)) {
 				pr_err("[SSP]: %s - Mcu meta_data frame1 error %d\n", __func__,
 						sensorsdata.meta_data.sensor);
-				return ERROR;
+				goto error_return;
 			}
 			report_meta_data(data, &sensorsdata);
 			break;
@@ -864,6 +871,13 @@ int parse_dataframe(struct ssp_data *data, char *pchRcvDataFrame, int iLength)
 		case SH_MSG2AP_GYRO_CALIBRATION_EVENT_OCCUR:
 			data->gyro_lib_state = GYRO_CALIBRATION_STATE_EVENT_OCCUR;
 			break;
+#ifdef CONFIG_SENSORS_SSP_MAGNETIC_COMMON            
+        case MSG2AP_INST_MAG_CAL:
+			wake_lock(&data->ssp_wake_lock);
+			save_magnetic_cal_param_to_nvm(data, pchRcvDataFrame, &iDataIdx);
+			wake_unlock(&data->ssp_wake_lock);
+			break;
+#endif            
         default :
             goto error_return;
 		}
