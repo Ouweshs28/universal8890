@@ -16,6 +16,9 @@
 mount -o rw,remount /
 mount -o rw,remount /system
 
+# set selinux permissive
+echo "0" > /sys/fs/selinux/enforce
+
 # init.d support
 if [ ! -e /system/etc/init.d ]; then
 	mkdir /system/etc/init.d
