@@ -38,7 +38,7 @@ dump_boot;
 
 if egrep -q "dream|G95" "/system/build.prop"; then
   ui_print " ";
-  ui_print "Patching ramdisk for S8/S8+ ported ROMs...";
+  ui_print "# Patching ramdisk for S8/S8+ ported ROMs...";
   insert_line default.prop "ro.oem_unlock_supported=1" after "persist.security.ams.enforcing=1" "ro.oem_unlock_supported=1";
   replace_file init.environ.rc 750 dream/init.environ.rc;
   insert_line init.samsungexynos8890.rc "service visiond /system/bin/visiond" after "start secure_storage" "\n# AIR\nservice visiond /system/bin/visiond\n    class main\n    user system\n    group system camera media media_rw\n";
