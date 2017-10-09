@@ -16,10 +16,14 @@
 #
 
 KERNEL_NAME="primal.grace"
+
 KERNEL_VERSION="1.0.0"
 KERNEL_REVISION="0"
 KERNEL_BETA="1"
 KERNEL_BASE="AQG6"
+
+DREAM_PATCH="AQH3"
+GRACE_PATCH="AQG6"
 
 export ARCH=arm64
 export BUILD_JOB_NUMBER=$(grep processor /proc/cpuinfo | wc -l)
@@ -323,6 +327,10 @@ FUNC_BUILD_ZIP()
 	SUBLEVEL=$(grep -Po -m 1 '(?<=SUBLEVEL = ).*' $RDIR/Makefile)
 	echo "kernel.version=$KERNEL_VERSION" > $ZIPDIR/.version
 	echo "kernel.base=$KERNEL_BASE" >> $ZIPDIR/.version
+	if [ $MODEL != gracelte ]; then
+		echo "dream.patch=$DREAM_PATCH" >> $ZIPDIR/.version
+		echo "grace.patch=$GRACE_PATCH" >> $ZIPDIR/.version
+	fi
 	echo "linux.version=$VERSION.$PATCHLEVEL.$SUBLEVEL" >> $ZIPDIR/.version
 
 	if ! [ -d $EXTDIR ]; then
