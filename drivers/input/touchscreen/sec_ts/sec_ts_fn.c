@@ -820,7 +820,7 @@ void sec_ts_print_frame(struct sec_ts_data *ts, short *min, short *max)
 		strncat(pStr, pTmp, 6 * ts->tx_count);
 	}
 
-	input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 	memset(pStr, 0x0, 6 * (ts->tx_count + 1));
 	snprintf(pTmp, sizeof(pTmp), " +");
 	strncat(pStr, pTmp, 6 * ts->tx_count);
@@ -830,7 +830,7 @@ void sec_ts_print_frame(struct sec_ts_data *ts, short *min, short *max)
 		strncat(pStr, pTmp, 6 * ts->rx_count);
 	}
 
-	input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 
 	for (i = 0; i < ts->rx_count; i++) {
 		memset(pStr, 0x0, 6 * (ts->tx_count + 1));
@@ -849,7 +849,7 @@ void sec_ts_print_frame(struct sec_ts_data *ts, short *min, short *max)
 			}
 			strncat(pStr, pTmp, 6 * ts->rx_count);
 		}
-	input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 	}
 	kfree(pStr);
 }
@@ -865,7 +865,7 @@ int sec_ts_read_frame(struct sec_ts_data *ts, u8 type, short *min, short *max)
 	int j = 0;
 	short *temp = NULL;
 
-	input_info(true, &ts->client->dev, "%s\n", __func__);
+	input_raw_info(true, &ts->client->dev, "%s: type %d\n", __func__, type);
 
 	/* set data length, allocation buffer memory */
 	readbytes = ts->rx_count * ts->tx_count * 2;
@@ -973,7 +973,7 @@ void sec_ts_print_self_frame(struct sec_ts_data *ts, short *min, short *max,
 		strncat(pStr, pTmp, 6 * num_short_ch);
 	}
 
-	input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 	memset(pStr, 0x0, 6 * (num_short_ch + 1));
 	snprintf(pTmp, sizeof(pTmp), "      +");
 	strncat(pStr, pTmp, 6 * num_short_ch);
@@ -983,7 +983,7 @@ void sec_ts_print_self_frame(struct sec_ts_data *ts, short *min, short *max,
 		strncat(pStr, pTmp, 6 * num_short_ch);
 	}
 
-	input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 
 	memset(pStr, 0x0, 6 * (num_short_ch + 1));
 	for (i = 0; i < num_short_ch; i++) {
@@ -995,7 +995,7 @@ void sec_ts_print_self_frame(struct sec_ts_data *ts, short *min, short *max,
 			*max = ts->sFrame[i];
 	}
 
-	input_info(true, &ts->client->dev, "SEC_TS        %s\n", pStr);
+	input_raw_info(true, &ts->client->dev, "SEC_TS        %s\n", pStr);
 
 	for (i = 0; i < num_long_ch; i++) {
 		memset(pStr, 0x0, 6 * (num_short_ch + 1));
@@ -1009,7 +1009,7 @@ void sec_ts_print_self_frame(struct sec_ts_data *ts, short *min, short *max,
 		if (ts->sFrame[num_short_ch + i] > *max)
 			*max = ts->sFrame[num_short_ch + i];
 
-		input_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
+		input_raw_info(true, &ts->client->dev, "SEC_TS %s\n", pStr);
 	}
 	kfree(pStr);
 }
@@ -1024,7 +1024,7 @@ static int sec_ts_read_channel(struct sec_ts_data *ts, u8 type, short *min, shor
 	u8 w_data[2];
 	u8 mode = TYPE_INVALID_DATA;
 
-	input_info(true, &ts->client->dev, "%s\n", __func__);
+	input_raw_info(true, &ts->client->dev, "%s: type %d\n", __func__, type);
 
 	pRead = kzalloc(PRE_DEFINED_DATA_LENGTH, GFP_KERNEL);
 	if (IS_ERR_OR_NULL(pRead))
@@ -1083,7 +1083,7 @@ static int sec_ts_read_channel(struct sec_ts_data *ts, u8 type, short *min, shor
 		*min = min(*min, ts->pFrame[jj]);
 		*max = max(*max, ts->pFrame[jj]);
 
-		input_info(true, &ts->client->dev, "%s: [%s][%d] %d\n", __func__,
+		input_raw_info(true, &ts->client->dev, "%s: [%s][%d] %d\n", __func__,
 				(jj < ts->tx_count) ? "TX" : "RX", jj, ts->pFrame[jj]);
 		jj++;
 	}
@@ -1118,7 +1118,7 @@ int sec_ts_read_raw_data(struct sec_ts_data *ts, struct sec_ts_test_mode *mode)
 		goto error_power_state;
 	}
 
-	input_info(true, &ts->client->dev, "%s: %d, %s\n",
+	input_raw_info(true, &ts->client->dev, "%s: %d, %s\n",
 			__func__, mode->type, mode->allnode ? "ALL" : "");
 
 	ret = sec_ts_fix_tmode(ts, TOUCH_SYSTEM_MODE_TOUCH, TOUCH_MODE_STATE_TOUCH);
@@ -1976,6 +1976,7 @@ void sec_ts_run_rawdata_all(struct sec_ts_data *ts)
 	short min, max;
 	int ret;
 
+	input_raw_data_clear();
 	sec_ts_fix_tmode(ts, TOUCH_SYSTEM_MODE_TOUCH, TOUCH_MODE_STATE_TOUCH);
 	ret = sec_ts_read_frame(ts, TYPE_OFFSET_DATA_SEC, &min, &max);
 	if (ret < 0) {

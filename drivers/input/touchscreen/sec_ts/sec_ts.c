@@ -2213,7 +2213,7 @@ static void sec_ts_read_nv_work(struct work_struct *work)
 	execute_selftest(ts);
 	enable_irq(ts->client->irq);
 
-	input_info(true, &ts->client->dev, "%s: %02X %02X %02X %02X\n",
+	input_raw_info(true, &ts->client->dev, "%s: ITO %02X %02X %02X %02X\n",
 		__func__, ts->ito_test[0], ts->ito_test[1]
 		, ts->ito_test[2], ts->ito_test[3]);
 

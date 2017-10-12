@@ -154,6 +154,7 @@ static bool max98506_readable_register(struct device *dev, unsigned int reg)
 
 #ifdef CONFIG_SND_SOC_MAXIM_DSM
 #ifdef USE_DSM_LOG
+#if 0 /* depracted move to digital_mute api */
 static int max98506_get_dump_status(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
@@ -177,6 +178,7 @@ static int max98506_set_dump_status(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+#endif
 static ssize_t max98506_log_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
@@ -184,6 +186,77 @@ static ssize_t max98506_log_show(struct device *dev,
 }
 
 static DEVICE_ATTR(dsm_log, S_IRUGO, max98506_log_show, NULL);
+
+static ssize_t max98506_log_spk_excu_max_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	maxdsm_log_max_refresh(SPK_EXCURSION_MAX);
+	return sprintf(buf, "%d", values.excursion_max);
+}
+
+static DEVICE_ATTR(spk_excu_max, S_IRUGO, max98506_log_spk_excu_max_show, NULL);
+
+static ssize_t max98506_log_spk_excu_maxtime_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	return sprintf(buf, "%s", values.dsm_timestamp);
+}
+
+static DEVICE_ATTR(spk_excu_maxtime, S_IRUGO, max98506_log_spk_excu_maxtime_show, NULL);
+
+static ssize_t max98506_log_spk_excu_overcnt_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	maxdsm_log_max_refresh(SPK_EXCURSION_OVERCNT);
+	return sprintf(buf, "%d", values.excursion_overcnt);
+}
+
+static DEVICE_ATTR(spk_excu_overcnt, S_IRUGO, max98506_log_spk_excu_overcnt_show, NULL);
+
+static ssize_t max98506_log_spk_temp_max_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	maxdsm_log_max_refresh(SPK_TEMP_MAX);
+	return sprintf(buf, "%d", values.coil_temp_max);
+}
+
+static DEVICE_ATTR(spk_temp_max, S_IRUGO, max98506_log_spk_temp_max_show, NULL);
+
+static ssize_t max98506_log_spk_temp_maxtime_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	return sprintf(buf, "%s", values.dsm_timestamp);
+}
+
+static DEVICE_ATTR(spk_temp_maxtime, S_IRUGO, max98506_log_spk_temp_maxtime_show, NULL);
+
+static ssize_t max98506_log_spk_temp_overcnt_show(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct maxim_dsm_log_max_values values;
+
+	maxdsm_log_max_prepare(&values);
+	maxdsm_log_max_refresh(SPK_TEMP_OVERCNT);
+
+	return sprintf(buf, "%d", values.coil_temp_overcnt);
+}
+
+static DEVICE_ATTR(spk_temp_overcnt, S_IRUGO, max98506_log_spk_temp_overcnt_show, NULL);
 #endif /* USE_DSM_LOG */
 
 #ifdef USE_DSM_UPDATE_CAL
@@ -215,6 +288,12 @@ static const char *class_name_log = DEFAULT_LOG_CLASS_NAME;
 static struct attribute *max98506_attributes[] = {
 #ifdef USE_DSM_LOG
 	&dev_attr_dsm_log.attr,
+	&dev_attr_spk_excu_max.attr,
+	&dev_attr_spk_excu_maxtime.attr,
+	&dev_attr_spk_excu_overcnt.attr,
+	&dev_attr_spk_temp_max.attr,
+	&dev_attr_spk_temp_maxtime.attr,
+	&dev_attr_spk_temp_overcnt.attr,
 #endif /* USE_DSM_LOG */
 #ifdef USE_DSM_UPDATE_CAL
 	&dev_attr_dsm_cal.attr,
@@ -522,11 +601,16 @@ static void max98506_spk_enable(struct max98506_priv *max98506,
 {
 	if (enable)
 		__max98506_spk_enable(max98506);
-	else
+	else {
+#ifdef USE_DSM_LOG		
+		maxdsm_update_param();
+#endif
 		max98506_regmap_update_bits(max98506,
 				MAX98506_R038_GLOBAL_ENABLE,
 				MAX98506_EN_MASK,
 				0x00);
+
+	}
 
 #ifdef CONFIG_SND_SOC_MAXIM_DSM
 	maxdsm_set_spk_state(enable);
@@ -816,7 +900,7 @@ static const struct snd_kcontrol_new max98506_snd_controls[] = {
 			max98506_spk_en_get,
 			max98506_spk_en_put),
 
-#ifdef USE_DSM_LOG
+#if 0
 	SOC_SINGLE_EXT("DSM LOG", SND_SOC_NOPM, 0, 3, 0,
 		max98506_get_dump_status, max98506_set_dump_status),
 #endif /* USE_DSM_LOG */
