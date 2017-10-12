@@ -28,6 +28,10 @@
 #endif
 #include <video/mipi_display.h>
 
+#ifdef CONFIG_DISPLAY_USE_INFO
+#include "dpui.h"
+#endif
+
 static unsigned int dynamic_lcd_type = 0;
 static unsigned int hw_rev = 0;	// for dcdc set
 static unsigned int lcdtype = 0;
@@ -2944,6 +2948,81 @@ displayon_err:
 
 }
 
+static int read_sleep_state(struct dsim_device* dsim)
+{
+	int ret;
+	u8 err_fg[S6E3HA5_ERR_FG_LEN] = {0xFF, };
+	u8 dsi_err[S6E3HA5_DSI_ERR_LEN] = {0xFF, };
+
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_F0, ARRAY_SIZE(SEQ_TEST_KEY_ON_F0));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_F0\n", __func__);
+		goto exit_read;
+	}
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_FC, ARRAY_SIZE(SEQ_TEST_KEY_ON_FC));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_FC\n", __func__);
+		goto exit_read;
+	}
+
+	ret = dsim_read_hl_data(dsim, S6E3HA5_DSI_ERR_REG, S6E3HA5_DSI_ERR_LEN, dsi_err);
+	if (ret != S6E3HA5_DSI_ERR_LEN) {
+		dsim_err("fail to read code on command.\n");
+		goto exit_read;
+	}
+
+
+	dsim_info("========== SHOW PANEL [05h:DSIE_CNT] INFO ==========\n");
+	dsim_info("* Reg Value : 0x%02x, Result : %s\n",
+			dsi_err[0], (dsi_err[0]) ? "NG" : "GOOD");
+	if (dsi_err[0])
+		dsim_info("* DSI Error Count : %d\n", dsi_err[0]);
+	dsim_info("====================================================\n");
+
+	inc_dpui_u32_field(DPUI_KEY_PNDSIE, dsi_err[0]);
+
+
+	ret = dsim_read_hl_data(dsim, S6E3HA5_ERR_FG_REG, S6E3HA5_ERR_FG_LEN, err_fg);
+	if (ret != S6E3HA5_ERR_FG_LEN) {
+		dsim_err("fail to read code on command.\n");
+		goto exit_read;
+	}
+	dsim_info("========== SHOW PANEL [EEh:ERR_FG] INFO ==========\n");
+	dsim_info("* Reg Value : 0x%02x, Result : %s\n",
+			err_fg[0], (err_fg[0] & 0x4C) ? "NG" : "GOOD");
+
+	if (err_fg[0] & 0x04) {
+		dsim_info("* VLOUT3 Error\n");
+		inc_dpui_u32_field(DPUI_KEY_PNVLO3E, 1);
+	}
+
+	if (err_fg[0] & 0x08) {
+		dsim_info("* ELVDD Error\n");
+		inc_dpui_u32_field(DPUI_KEY_PNELVDE, 1);
+	}
+
+	if (err_fg[0] & 0x40) {
+		dsim_info("* VLIN1 Error\n");
+		inc_dpui_u32_field(DPUI_KEY_PNVLI1E, 1);
+	}
+
+	dsim_info("==================================================\n");
+
+	inc_dpui_u32_field(DPUI_KEY_PNESDE, (err_fg[0] & 0x4D) ? 1 : 0);
+
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_F0\n", __func__);
+		goto exit_read;
+	}
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_FC, ARRAY_SIZE(SEQ_TEST_KEY_OFF_FC));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_FC\n", __func__);
+		goto exit_read;
+	}
+exit_read:
+	return 0;
+}
 static int s6e3ha5_wqhd_exit(struct dsim_device *dsim)
 {
 	int ret = 0;
@@ -2982,6 +3061,8 @@ static int s6e3ha5_wqhd_exit(struct dsim_device *dsim)
 
 	dsim_info("MDD : %s was called unlock\n", __func__);
 #else
+	read_sleep_state(dsim);
+
 	ret = dsim_write_hl_data(dsim, SEQ_DISPLAY_OFF, ARRAY_SIZE(SEQ_DISPLAY_OFF));
 	if (ret < 0) {
 		dsim_err("%s : fail to write CMD : DISPLAY_OFF\n", __func__);
@@ -3178,14 +3259,30 @@ static int s6e3ha5_wqhd_init(struct dsim_device *dsim)
 
 #ifdef CONFIG_FB_DSU
 	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_F0, ARRAY_SIZE(SEQ_TEST_KEY_ON_F0));
-	if (ret < 0) dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_F0\n", __func__);
-
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_F0\n", __func__);
+		goto init_exit;
+	}
 	ret = _s6e3ha5_wqhd_dsu_command(dsim, dsim->dsu_xres, dsim->dsu_yres);
+
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_FC\n", __func__);
+		goto init_exit;
+	}
+
 #elif defined(CONFIG_LCD_RES)
 	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_ON_F0, ARRAY_SIZE(SEQ_TEST_KEY_ON_F0));
-	if (ret < 0) dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_F0\n", __func__);
-
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_ON_F0\n", __func__);
+		goto init_exit;
+	}
 	ret = _s6e3ha5_wqhd_dsu_command(dsim, dsim->priv.lcd_res, 0);
+	ret = dsim_write_hl_data(dsim, SEQ_TEST_KEY_OFF_F0, ARRAY_SIZE(SEQ_TEST_KEY_OFF_F0));
+	if (ret < 0) {
+		dsim_err("%s : fail to write CMD : SEQ_TEST_KEY_OFF_FC\n", __func__);
+		goto init_exit;
+	}
 #else
 	ret = dsim_write_data(dsim, MIPI_DSI_DSC_PRA, S6E3HA5_DATA_DSC_ENABLE[0], S6E3HA5_DATA_DSC_ENABLE[1]);
 	if (ret < 0) {

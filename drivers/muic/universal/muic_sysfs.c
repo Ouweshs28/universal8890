@@ -29,7 +29,7 @@
 #include <linux/delay.h>
 #include <linux/host_notify.h>
 #include <linux/string.h>
-#include <linux/sec_debug.h>
+#include <linux/sec_ext.h>
 #include <linux/power_supply.h>
 
 #include <linux/muic/muic.h>

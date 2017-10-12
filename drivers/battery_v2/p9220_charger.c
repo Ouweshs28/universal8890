@@ -1918,7 +1918,8 @@ static void p9220_wpc_isr_work(struct work_struct *work)
 			break;
 		case 0x10:
 			pr_info("%s: NOBLE Wireless Charge PAD %s\n", __func__,
-				charger->pad_vout == PAD_VOUT_10V ? "HV" : "");			
+				charger->pad_vout == PAD_VOUT_10V ? "HV" : "");
+			value.intval = charger->pdata->cable_type;
 			break;
 		case 0x30: /* Hero Stand Pad */
 			if (charger->pad_vout == PAD_VOUT_10V) {

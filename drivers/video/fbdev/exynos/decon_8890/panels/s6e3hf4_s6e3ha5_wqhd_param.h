@@ -1299,10 +1299,18 @@ static const unsigned char SEQ_MCD_OFF_SET12[] = {
 #define S6E3HA5_AID_CMD_CNT					3
 #define S6E3HA5_AID_LEN						2
 
+#define S6E3HA5_DSI_ERR_REG					0x05
+#define S6E3HA5_DSI_ERR_LEN					2
+
+#define S6E3HA5_ERR_FG_REG					0xEE
+#define S6E3HA5_ERR_FG_LEN					2
+
 #ifdef CONFIG_CHECK_OCTA_CHIP_ID
 #define S6E3HA5_OCTAID_REG			0xC9
 #define S6E3HA5_OCTAID_LEN			25
 #endif
+
+
 
 static const unsigned char S6E3HA5_SEQ_GAMMA_CONDITION_SET[] = {
 	0xCA,

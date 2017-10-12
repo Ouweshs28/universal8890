@@ -214,10 +214,9 @@ static int dpui_notifier_callback(struct notifier_block * self, unsigned long ev
 	min = priv->date[3] & 0x3F;
 	sec = priv->date[4] & 0x3F;
 
-	size = snprintf(tbuf, MAX_DPUI_VAL_LEN, "%04d%02d%02d", year, mon, day);
+	size = snprintf(tbuf, MAX_DPUI_VAL_LEN, "%04d%02d%02d %02d%02d%02d",
+		year, mon, day, hour, min, sec);
 	set_dpui_field(DPUI_KEY_MAID_DATE, tbuf, size);
-	size = snprintf(tbuf, MAX_DPUI_VAL_LEN, "%02d%02d%02d", hour, min, sec);
-	set_dpui_field(DPUI_KEY_MAID_TIME, tbuf, size);
 
 	/* lcd id */
 	size = snprintf(tbuf, MAX_DPUI_VAL_LEN, "%d", priv->id[0]);
