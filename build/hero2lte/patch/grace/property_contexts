@@ -365,6 +365,9 @@ persist.translation.		u:object_r:system_prop:s0
 product.brand                  u:object_r:csc_prop:s0
 radio.                          u:object_r:radio_prop:s0
 
+# requester: mk87.shin
+persist.security.ccmextra       u:object_r:ccm_prop:s0
+
 # board/N_review_request/view/21661001
 tps.keepstate                          u:object_r:tps_prop:s0
 

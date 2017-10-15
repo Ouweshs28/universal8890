@@ -23,7 +23,7 @@ KERNEL_BETA="0"
 KERNEL_BASE="DQIC"
 
 DREAM_PATCH="AQI7"
-GRACE_PATCH="AQG6"
+GRACE_PATCH="AQH3"
 
 export ARCH=arm64
 export BUILD_JOB_NUMBER=$(grep processor /proc/cpuinfo | wc -l)
