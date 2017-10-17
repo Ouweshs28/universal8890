@@ -31,7 +31,6 @@ echo ""
 
 echo "◊ Deleting log files..."
 rm -f cfp_log.txt
-rm -f build_kernel.log
 echo ""
 echo "◊ Deleting dtb compilation leftovers..."
 rm -f arch/arm64/boot/dtb.img
